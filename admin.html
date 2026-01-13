@@ -553,31 +553,55 @@
             document.getElementById('adminContent').style.display = 'none';
         });
 
-        function loadData() {
-            const savedKoi = localStorage.getItem('koiList');
-            const savedContacts = localStorage.getItem('contactSettings');
-            if (savedKoi) koiList = JSON.parse(savedKoi);
-            if (savedContacts) {
-                contactSettings = JSON.parse(savedContacts);
-                document.getElementById('whatsappNumber').value = contactSettings.whatsapp || '';
-                document.getElementById('instagramUsername').value = contactSettings.instagram || '';
-                document.getElementById('facebookUrl').value = contactSettings.facebook || '';
-            }
-            nextKoiId = Math.max(...koiList.map(k => k.id), 0) + 1;
-        }
+      async function loadData() {
+    try {
+        const response = await fetch('/.netlify/functions/get-koi');
+        if (!response.ok) throw new Error('Failed to load');
+        const data = await response.json();
+        koiList = data.koiList || [];
+        contactSettings = data.contactSettings || {};
+        
+        document.getElementById('whatsappNumber').value = contactSettings.whatsapp || '';
+        document.getElementById('instagramUsername').value = contactSettings.instagram || '';
+        document.getElementById('facebookUrl').value = contactSettings.facebook || '';
+        
+        nextKoiId = Math.max(...koiList.map(k => k.id), 0) + 1;
+    } catch (error) {
+        console.error('Error loading data:', error);
+        koiList = [];
+        contactSettings = {};
+    }
+}
 
-        function saveData() {
-            localStorage.setItem('koiList', JSON.stringify(koiList));
-            localStorage.setItem('contactSettings', JSON.stringify(contactSettings));
-        }
+   async function saveData() {
+    try {
+        const response = await fetch('/.netlify/functions/save-koi', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                koiList,
+                contactSettings
+            })
+        });
+        
+        if (!response.ok) throw new Error('Failed to save');
+        return true;
+    } catch (error) {
+        console.error('Error saving data:', error);
+        alert('Error saving data. Please try again.');
+        return false;
+    }
+}
 
-        function saveContactSettings() {
-            contactSettings.whatsapp = document.getElementById('whatsappNumber').value;
-            contactSettings.instagram = document.getElementById('instagramUsername').value;
-            contactSettings.facebook = document.getElementById('facebookUrl').value;
-            saveData();
-            alert('Contact settings saved!');
-        }
+     async function saveContactSettings() {
+    contactSettings.whatsapp = document.getElementById('whatsappNumber').value;
+    contactSettings.instagram = document.getElementById('instagramUsername').value;
+    contactSettings.facebook = document.getElementById('facebookUrl').value;
+    const success = await saveData();
+    if (success) {
+        alert('Contact settings saved!');
+    }
+}
 
         document.getElementById('mediaInput').addEventListener('change', function(e) {
             const files = Array.from(e.target.files);
@@ -666,7 +690,7 @@
             document.getElementById('cancelBtn').style.display = 'none';
         }
 
-        function saveKoi() {
+      async function saveKoi() {
             const name = document.getElementById('koiName').value;
             const description = document.getElementById('koiDescription').value;
             const price = document.getElementById('koiPrice').value;
@@ -713,7 +737,7 @@
                                 filesProcessed++;
                                 if (filesProcessed === selectedFiles.length) {
                                     koi.media = media;
-                                    saveData();
+                                  await  saveData();
                                     cancelEdit();
                                     renderKoi();
                                     document.getElementById('loadingOverlay').classList.remove('active');
@@ -722,7 +746,7 @@
                             reader.readAsDataURL(file);
                         });
                     } else {
-                        saveData();
+                      await  saveData();
                         cancelEdit();
                         renderKoi();
                     }
@@ -763,7 +787,7 @@
                                 media: media
                             });
 
-                            saveData();
+                          await  saveData();
                             cancelEdit();
                             renderKoi();
                             document.getElementById('loadingOverlay').classList.remove('active');
@@ -858,4 +882,5 @@
     </script>
 </body>
 </html>
+
 
