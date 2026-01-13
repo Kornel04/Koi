@@ -572,16 +572,20 @@ header img {
         let currentFullscreenKoi = null;
         let currentFullscreenIndex = 0;
 
-        function loadData() {
-            const savedKoi = localStorage.getItem('koiList');
-            const savedContacts = localStorage.getItem('contactSettings');
-            if (savedKoi) koiList = JSON.parse(savedKoi);
-            if (savedContacts) {
-                contactSettings = JSON.parse(savedContacts);
-                updateContactLinks();
-            }
-        }
-
+       async function loadData() {
+    try {
+        const response = await fetch('/.netlify/functions/get-koi');
+        if (!response.ok) throw new Error('Failed to load');
+        const data = await response.json();
+        koiList = data.koiList || [];
+        contactSettings = data.contactSettings || {};
+        updateContactLinks();
+    } catch (error) {
+        console.error('Error loading data:', error);
+        koiList = [];
+        contactSettings = {};
+    }
+}
         function updateContactLinks() {
             const whatsappLink = document.getElementById('whatsappLink');
             const instagramLink = document.getElementById('instagramLink');
@@ -831,8 +835,9 @@ header img {
             }
         });
 
-        loadData();
-        renderKoi();
+        loadData().then(() => {
+    renderKoi();
+});
 
         // Netlify Identity: Handle password reset and authentication tokens
         if (window.netlifyIdentity) {
@@ -853,6 +858,7 @@ header img {
     </script>
 </body>
 </html>
+
 
 
 
