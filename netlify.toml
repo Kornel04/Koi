@@ -1,8 +1,10 @@
-# Netlify Configuration
 [build]
   publish = "."
+  functions = "netlify/functions"
 
-# Redirect rules for admin page protection
+[functions]
+  node_bundler = "esbuild"
+
 [[redirects]]
   from = "/admin"
   to = "/admin.html"
@@ -10,7 +12,6 @@
   force = true
   conditions = {Role = ["admin"]}
 
-# If not admin, redirect to login
 [[redirects]]
   from = "/admin"
   to = "/#admin-login"
