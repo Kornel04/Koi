@@ -521,39 +521,38 @@
 
     <script>
         let koiList = [];
-        let contactSettings = {};
-        let selectedFiles = [];
-        let editingKoiId = null;
-        let nextKoiId = 1;
+let contactSettings = {};
+let selectedFiles = [];
+let editingKoiId = null;
+let nextKoiId = 1;
 
-        // Netlify Identity Authentication
-        netlifyIdentity.on('init', user => {
-            if (user) {
-                document.getElementById('loginPrompt').style.display = 'none';
-                document.getElementById('adminContent').style.display = 'block';
-                loadData();
-                renderKoi();
-            } else {
-                // Not logged in, show login prompt
-                document.getElementById('loginPrompt').style.display = 'block';
-                document.getElementById('adminContent').style.display = 'none';
-            }
-        });
+// Netlify Identity Authentication
+netlifyIdentity.on('init', user => {
+    if (user) {
+        document.getElementById('loginPrompt').style.display = 'none';
+        document.getElementById('adminContent').style.display = 'block';
+        loadData();
+        renderKoi();
+    } else {
+        document.getElementById('loginPrompt').style.display = 'block';
+        document.getElementById('adminContent').style.display = 'none';
+    }
+});
 
-        netlifyIdentity.on('login', user => {
-            document.getElementById('loginPrompt').style.display = 'none';
-            document.getElementById('adminContent').style.display = 'block';
-            loadData();
-            renderKoi();
-            netlifyIdentity.close(); // Close the popup after login
-        });
+netlifyIdentity.on('login', user => {
+    document.getElementById('loginPrompt').style.display = 'none';
+    document.getElementById('adminContent').style.display = 'block';
+    loadData();
+    renderKoi();
+    netlifyIdentity.close();
+});
 
-        netlifyIdentity.on('logout', () => {
-            document.getElementById('loginPrompt').style.display = 'block';
-            document.getElementById('adminContent').style.display = 'none';
-        });
+netlifyIdentity.on('logout', () => {
+    document.getElementById('loginPrompt').style.display = 'block';
+    document.getElementById('adminContent').style.display = 'none';
+});
 
-      async function loadData() {
+async function loadData() {
     try {
         const response = await fetch('/.netlify/functions/get-koi');
         if (!response.ok) throw new Error('Failed to load');
@@ -573,7 +572,7 @@
     }
 }
 
-   async function saveData() {
+async function saveData() {
     try {
         const response = await fetch('/.netlify/functions/save-koi', {
             method: 'POST',
@@ -593,7 +592,7 @@
     }
 }
 
-     async function saveContactSettings() {
+async function saveContactSettings() {
     contactSettings.whatsapp = document.getElementById('whatsappNumber').value;
     contactSettings.instagram = document.getElementById('instagramUsername').value;
     contactSettings.facebook = document.getElementById('facebookUrl').value;
@@ -603,167 +602,132 @@
     }
 }
 
-        document.getElementById('mediaInput').addEventListener('change', function(e) {
-            const files = Array.from(e.target.files);
-            if (files.length > 0) {
-                document.getElementById('loadingOverlay').classList.add('active');
-                selectedFiles = files;
-                setTimeout(() => {
-                    updateMediaPreview();
-                    document.getElementById('loadingOverlay').classList.remove('active');
-                }, 500);
-            }
-        });
-
-        function updateMediaPreview() {
-            const preview = document.getElementById('mediaPreview');
-            preview.innerHTML = '';
-            
-            selectedFiles.forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const div = document.createElement('div');
-                    div.className = 'media-preview-item';
-                    
-                    if (file.type.startsWith('image/')) {
-                        div.innerHTML = `
-                            <img src="${e.target.result}" alt="Preview">
-                            <button class="remove-media" onclick="removeMedia(${index})">×</button>
-                        `;
-                    } else if (file.type.startsWith('video/')) {
-                        div.innerHTML = `
-                            <video src="${e.target.result}"></video>
-                            <button class="remove-media" onclick="removeMedia(${index})">×</button>
-                        `;
-                    }
-                    
-                    preview.appendChild(div);
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-        function removeMedia(index) {
-            selectedFiles.splice(index, 1);
+document.getElementById('mediaInput').addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+        document.getElementById('loadingOverlay').classList.add('active');
+        selectedFiles = files;
+        setTimeout(() => {
             updateMediaPreview();
-        }
+            document.getElementById('loadingOverlay').classList.remove('active');
+        }, 500);
+    }
+});
 
-        function editKoi(id) {
-            const koi = koiList.find(k => k.id === id);
-            if (!koi) return;
-
-            editingKoiId = id;
-            document.getElementById('formTitle').textContent = 'Edit Koi';
-            document.getElementById('koiName').value = koi.name;
-            document.getElementById('koiDescription').value = koi.description;
-            document.getElementById('koiPrice').value = koi.price;
-            document.getElementById('koiSize').value = koi.size || '';
-            document.getElementById('koiQuantity').value = koi.quantity !== undefined ? koi.quantity : 1;
-            document.getElementById('koiAge').value = koi.age || '';
-            document.getElementById('koiGender').value = koi.gender || '';
-            document.getElementById('koiType').value = koi.type || '';
-            document.getElementById('koiBreeder').value = koi.breeder || '';
-            document.getElementById('koiStatus').value = koi.status || 'available';
-            document.getElementById('saveBtn').textContent = 'Update Koi';
-            document.getElementById('cancelBtn').style.display = 'block';
-
-            document.querySelector('.admin-controls').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function cancelEdit() {
-            editingKoiId = null;
-            document.getElementById('formTitle').textContent = 'Add New Koi';
-            document.getElementById('koiName').value = '';
-            document.getElementById('koiDescription').value = '';
-            document.getElementById('koiPrice').value = '';
-            document.getElementById('koiSize').value = '';
-            document.getElementById('koiQuantity').value = '1';
-            document.getElementById('koiAge').value = '';
-            document.getElementById('koiGender').value = '';
-            document.getElementById('koiType').value = '';
-            document.getElementById('koiBreeder').value = '';
-            document.getElementById('koiStatus').value = 'available';
-            document.getElementById('mediaInput').value = '';
-            selectedFiles = [];
-            document.getElementById('mediaPreview').innerHTML = '';
-            document.getElementById('saveBtn').textContent = 'Add Koi';
-            document.getElementById('cancelBtn').style.display = 'none';
-        }
-
-      async function saveKoi() {
-            const name = document.getElementById('koiName').value;
-            const description = document.getElementById('koiDescription').value;
-            const price = document.getElementById('koiPrice').value;
-            const size = document.getElementById('koiSize').value;
-            const quantity = document.getElementById('koiQuantity').value;
-            const age = document.getElementById('koiAge').value;
-            const gender = document.getElementById('koiGender').value;
-            const type = document.getElementById('koiType').value;
-            const breeder = document.getElementById('koiBreeder').value;
-            const status = document.getElementById('koiStatus').value;
-
-            if (!name || !description || !price) {
-                alert('Please fill in name, description, and price');
-                return;
+function updateMediaPreview() {
+    const preview = document.getElementById('mediaPreview');
+    preview.innerHTML = '';
+    
+    selectedFiles.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const div = document.createElement('div');
+            div.className = 'media-preview-item';
+            
+            if (file.type.startsWith('image/')) {
+                div.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview">
+                    <button class="remove-media" onclick="removeMedia(${index})">×</button>
+                `;
+            } else if (file.type.startsWith('video/')) {
+                div.innerHTML = `
+                    <video src="${e.target.result}"></video>
+                    <button class="remove-media" onclick="removeMedia(${index})">×</button>
+                `;
             }
+            
+            preview.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    });
+}
 
-            if (editingKoiId) {
-                const koi = koiList.find(k => k.id === editingKoiId);
-                if (koi) {
-                    koi.name = name;
-                    koi.description = description;
-                    koi.price = parseFloat(price);
-                    koi.size = parseFloat(size) || null;
-                    koi.quantity = parseInt(quantity) || 0;
-                    koi.age = age;
-                    koi.gender = gender;
-                    koi.type = type;
-                    koi.breeder = breeder;
-                    koi.status = status;
+function removeMedia(index) {
+    selectedFiles.splice(index, 1);
+    updateMediaPreview();
+}
 
-                    if (selectedFiles.length > 0) {
-                        document.getElementById('loadingOverlay').classList.add('active');
-                        const media = [];
-                        let filesProcessed = 0;
+function editKoi(id) {
+    const koi = koiList.find(k => k.id === id);
+    if (!koi) return;
 
-                        selectedFiles.forEach((file) => {
-                            const reader = new FileReader();
-                            reader.onload = function(e) {
-                                media.push({
-                                    type: file.type.startsWith('image/') ? 'image' : 'video',
-                                    url: e.target.result
-                                });
-                                
-                                filesProcessed++;
-                                if (filesProcessed === selectedFiles.length) {
-                                    koi.media = media;
-                                  await  saveData();
-                                    cancelEdit();
-                                    renderKoi();
-                                    document.getElementById('loadingOverlay').classList.remove('active');
-                                }
-                            };
-                            reader.readAsDataURL(file);
-                        });
-                    } else {
-                      await  saveData();
-                        cancelEdit();
-                        renderKoi();
-                    }
-                }
-            } else {
-                if (selectedFiles.length === 0) {
-                    alert('Please select at least one image or video');
-                    return;
-                }
+    editingKoiId = id;
+    document.getElementById('formTitle').textContent = 'Edit Koi';
+    document.getElementById('koiName').value = koi.name;
+    document.getElementById('koiDescription').value = koi.description;
+    document.getElementById('koiPrice').value = koi.price;
+    document.getElementById('koiSize').value = koi.size || '';
+    document.getElementById('koiQuantity').value = koi.quantity !== undefined ? koi.quantity : 1;
+    document.getElementById('koiAge').value = koi.age || '';
+    document.getElementById('koiGender').value = koi.gender || '';
+    document.getElementById('koiType').value = koi.type || '';
+    document.getElementById('koiBreeder').value = koi.breeder || '';
+    document.getElementById('koiStatus').value = koi.status || 'available';
+    document.getElementById('saveBtn').textContent = 'Update Koi';
+    document.getElementById('cancelBtn').style.display = 'block';
 
+    document.querySelector('.admin-controls').scrollIntoView({ behavior: 'smooth' });
+}
+
+function cancelEdit() {
+    editingKoiId = null;
+    document.getElementById('formTitle').textContent = 'Add New Koi';
+    document.getElementById('koiName').value = '';
+    document.getElementById('koiDescription').value = '';
+    document.getElementById('koiPrice').value = '';
+    document.getElementById('koiSize').value = '';
+    document.getElementById('koiQuantity').value = '1';
+    document.getElementById('koiAge').value = '';
+    document.getElementById('koiGender').value = '';
+    document.getElementById('koiType').value = '';
+    document.getElementById('koiBreeder').value = '';
+    document.getElementById('koiStatus').value = 'available';
+    document.getElementById('mediaInput').value = '';
+    selectedFiles = [];
+    document.getElementById('mediaPreview').innerHTML = '';
+    document.getElementById('saveBtn').textContent = 'Add Koi';
+    document.getElementById('cancelBtn').style.display = 'none';
+}
+
+async function saveKoi() {
+    const name = document.getElementById('koiName').value;
+    const description = document.getElementById('koiDescription').value;
+    const price = document.getElementById('koiPrice').value;
+    const size = document.getElementById('koiSize').value;
+    const quantity = document.getElementById('koiQuantity').value;
+    const age = document.getElementById('koiAge').value;
+    const gender = document.getElementById('koiGender').value;
+    const type = document.getElementById('koiType').value;
+    const breeder = document.getElementById('koiBreeder').value;
+    const status = document.getElementById('koiStatus').value;
+
+    if (!name || !description || !price) {
+        alert('Please fill in name, description, and price');
+        return;
+    }
+
+    if (editingKoiId) {
+        const koi = koiList.find(k => k.id === editingKoiId);
+        if (koi) {
+            koi.name = name;
+            koi.description = description;
+            koi.price = parseFloat(price);
+            koi.size = parseFloat(size) || null;
+            koi.quantity = parseInt(quantity) || 0;
+            koi.age = age;
+            koi.gender = gender;
+            koi.type = type;
+            koi.breeder = breeder;
+            koi.status = status;
+
+            if (selectedFiles.length > 0) {
                 document.getElementById('loadingOverlay').classList.add('active');
                 const media = [];
                 let filesProcessed = 0;
 
                 selectedFiles.forEach((file) => {
                     const reader = new FileReader();
-                    reader.onload = function(e) {
+                    reader.onload = async function(e) {
                         media.push({
                             type: file.type.startsWith('image/') ? 'image' : 'video',
                             url: e.target.result
@@ -771,23 +735,8 @@
                         
                         filesProcessed++;
                         if (filesProcessed === selectedFiles.length) {
-                            koiList.push({
-                                id: nextKoiId++,
-                                name: name,
-                                description: description,
-                                price: parseFloat(price),
-                                size: parseFloat(size) || null,
-                                quantity: parseInt(quantity) || 0,
-                                age: age,
-                                gender: gender,
-                                type: type,
-                                breeder: breeder,
-                                status: status,
-                                order: koiList.length,
-                                media: media
-                            });
-
-                          await  saveData();
+                            koi.media = media;
+                            await saveData();
                             cancelEdit();
                             renderKoi();
                             document.getElementById('loadingOverlay').classList.remove('active');
@@ -795,92 +744,143 @@
                     };
                     reader.readAsDataURL(file);
                 });
-            }
-        }
-
-        function deleteKoi(id) {
-            if (confirm('Are you sure you want to delete this koi?')) {
-                koiList = koiList.filter(k => k.id !== id);
-                saveData();
+            } else {
+                await saveData();
+                cancelEdit();
                 renderKoi();
             }
         }
-
-        function moveKoi(id, direction) {
-            const index = koiList.findIndex(k => k.id === id);
-            if (index === -1) return;
-
-            const newIndex = direction === 'up' ? index - 1 : index + 1;
-            if (newIndex < 0 || newIndex >= koiList.length) return;
-
-            [koiList[index], koiList[newIndex]] = [koiList[newIndex], koiList[index]];
-            koiList.forEach((koi, i) => koi.order = i);
-            saveData();
-            renderKoi();
+    } else {
+        if (selectedFiles.length === 0) {
+            alert('Please select at least one image or video');
+            return;
         }
 
-        function updateInventoryCount() {
-            const available = koiList.filter(k => k.status !== 'sold').length;
-            const sold = koiList.filter(k => k.status === 'sold').length;
-            const total = koiList.length;
-            
-            document.getElementById('inventoryCount').textContent = 
-                `Total: ${total} koi • ${available} Available • ${sold} Sold`;
-        }
+        document.getElementById('loadingOverlay').classList.add('active');
+        const media = [];
+        let filesProcessed = 0;
 
-        function renderKoi() {
-            updateInventoryCount();
-            const grid = document.getElementById('koiGrid');
-            grid.innerHTML = '';
-
-            koiList.sort((a, b) => a.order - b.order).forEach((koi, index) => {
-                const card = document.createElement('div');
-                card.className = 'koi-card';
+        selectedFiles.forEach((file) => {
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                media.push({
+                    type: file.type.startsWith('image/') ? 'image' : 'video',
+                    url: e.target.result
+                });
                 
-                let detailsHTML = '';
-                if (koi.size || koi.age || koi.gender || koi.type) {
-                    detailsHTML = '<div class="koi-details">';
-                    if (koi.type) detailsHTML += `<span class="koi-detail-item">${koi.type}</span>`;
-                    if (koi.size) detailsHTML += `<span class="koi-detail-item">${koi.size}cm</span>`;
-                    if (koi.age) detailsHTML += `<span class="koi-detail-item">${koi.age}</span>`;
-                    if (koi.gender) detailsHTML += `<span class="koi-detail-item">${koi.gender}</span>`;
-                    detailsHTML += '</div>';
+                filesProcessed++;
+                if (filesProcessed === selectedFiles.length) {
+                    koiList.push({
+                        id: nextKoiId++,
+                        name: name,
+                        description: description,
+                        price: parseFloat(price),
+                        size: parseFloat(size) || null,
+                        quantity: parseInt(quantity) || 0,
+                        age: age,
+                        gender: gender,
+                        type: type,
+                        breeder: breeder,
+                        status: status,
+                        order: koiList.length,
+                        media: media
+                    });
+
+                    await saveData();
+                    cancelEdit();
+                    renderKoi();
+                    document.getElementById('loadingOverlay').classList.remove('active');
                 }
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+}
 
-                const isOutOfStock = koi.quantity === 0 && koi.status !== 'sold';
-                const showQuantity = koi.quantity !== undefined && koi.quantity !== 1;
+async function deleteKoi(id) {
+    if (confirm('Are you sure you want to delete this koi?')) {
+        koiList = koiList.filter(k => k.id !== id);
+        await saveData();
+        renderKoi();
+    }
+}
 
-                const mediaItem = koi.media[0];
-                const mediaHTML = mediaItem.type === 'image' ? 
-                    `<img src="${mediaItem.url}" alt="${koi.name}" class="media-item active">` :
-                    `<video src="${mediaItem.url}" class="media-item active"></video>`;
+async function moveKoi(id, direction) {
+    const index = koiList.findIndex(k => k.id === id);
+    if (index === -1) return;
 
-                card.innerHTML = `
-                    ${koi.status === 'sold' ? '<div class="sold-badge">SOLD</div>' : ''}
-                    ${isOutOfStock ? '<div class="out-of-stock-badge">OUT OF STOCK</div>' : ''}
-                    ${showQuantity ? `<div class="quantity-badge">Qty: ${koi.quantity}</div>` : ''}
-                    <div class="media-carousel">${mediaHTML}</div>
-                    <div class="koi-info">
-                        <div class="koi-name">${koi.name}</div>
-                        ${detailsHTML}
-                        <div class="koi-description">${koi.description}</div>
-                        ${koi.breeder ? `<p style="color: #999; font-size: 13px; margin-bottom: 10px;">🏆 ${koi.breeder}</p>` : ''}
-                        <div class="koi-price">R ${koi.price.toLocaleString()}</div>
-                        <div class="action-buttons" style="display: flex; gap: 10px;">
-                            ${index > 0 ? `<button class="reorder-btn" onclick="moveKoi(${koi.id}, 'up')" style="flex: 0 0 40px; padding: 8px;">↑</button>` : ''}
-                            ${index < koiList.length - 1 ? `<button class="reorder-btn" onclick="moveKoi(${koi.id}, 'down')" style="flex: 0 0 40px; padding: 8px;">↓</button>` : ''}
-                        </div>
-                        <div class="action-buttons">
-                            <button class="edit-btn" onclick="editKoi(${koi.id})">Edit</button>
-                            <button class="delete-btn" onclick="deleteKoi(${koi.id})">Delete</button>
-                        </div>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= koiList.length) return;
+
+    [koiList[index], koiList[newIndex]] = [koiList[newIndex], koiList[index]];
+    koiList.forEach((koi, i) => koi.order = i);
+    await saveData();
+    renderKoi();
+}
+
+function updateInventoryCount() {
+    const available = koiList.filter(k => k.status !== 'sold').length;
+    const sold = koiList.filter(k => k.status === 'sold').length;
+    const total = koiList.length;
+    
+    document.getElementById('inventoryCount').textContent = 
+        `Total: ${total} koi • ${available} Available • ${sold} Sold`;
+}
+
+function renderKoi() {
+    updateInventoryCount();
+    const grid = document.getElementById('koiGrid');
+    grid.innerHTML = '';
+
+    koiList.sort((a, b) => a.order - b.order).forEach((koi, index) => {
+        const card = document.createElement('div');
+        card.className = 'koi-card';
+        
+        let detailsHTML = '';
+        if (koi.size || koi.age || koi.gender || koi.type) {
+            detailsHTML = '<div class="koi-details">';
+            if (koi.type) detailsHTML += `<span class="koi-detail-item">${koi.type}</span>`;
+            if (koi.size) detailsHTML += `<span class="koi-detail-item">${koi.size}cm</span>`;
+            if (koi.age) detailsHTML += `<span class="koi-detail-item">${koi.age}</span>`;
+            if (koi.gender) detailsHTML += `<span class="koi-detail-item">${koi.gender}</span>`;
+            detailsHTML += '</div>';
         }
+
+        const isOutOfStock = koi.quantity === 0 && koi.status !== 'sold';
+        const showQuantity = koi.quantity !== undefined && koi.quantity !== 1;
+
+        const mediaItem = koi.media[0];
+        const mediaHTML = mediaItem.type === 'image' ? 
+            `<img src="${mediaItem.url}" alt="${koi.name}" class="media-item active">` :
+            `<video src="${mediaItem.url}" class="media-item active"></video>`;
+
+        card.innerHTML = `
+            ${koi.status === 'sold' ? '<div class="sold-badge">SOLD</div>' : ''}
+            ${isOutOfStock ? '<div class="out-of-stock-badge">OUT OF STOCK</div>' : ''}
+            ${showQuantity ? `<div class="quantity-badge">Qty: ${koi.quantity}</div>` : ''}
+            <div class="media-carousel">${mediaHTML}</div>
+            <div class="koi-info">
+                <div class="koi-name">${koi.name}</div>
+                ${detailsHTML}
+                <div class="koi-description">${koi.description}</div>
+                ${koi.breeder ? `<p style="color: #999; font-size: 13px; margin-bottom: 10px;">🏆 ${koi.breeder}</p>` : ''}
+                <div class="koi-price">R ${koi.price.toLocaleString()}</div>
+                <div class="action-buttons" style="display: flex; gap: 10px;">
+                    ${index > 0 ? `<button class="reorder-btn" onclick="moveKoi(${koi.id}, 'up')" style="flex: 0 0 40px; padding: 8px;">↑</button>` : ''}
+                    ${index < koiList.length - 1 ? `<button class="reorder-btn" onclick="moveKoi(${koi.id}, 'down')" style="flex: 0 0 40px; padding: 8px;">↓</button>` : ''}
+                </div>
+                <div class="action-buttons">
+                    <button class="edit-btn" onclick="editKoi(${koi.id})">Edit</button>
+                    <button class="delete-btn" onclick="deleteKoi(${koi.id})">Delete</button>
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
     </script>
 </body>
 </html>
+
 
 
